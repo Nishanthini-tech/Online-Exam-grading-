@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ exam.title }} - ExamPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="exam-body" id="examBody">
+
+    <!-- Malpractice Warning Overlay -->
+    <div id="warningOverlay" class="warning-overlay hidden">
+        <div class="warning-box">
+            <div class="warning-icon">⚠️</div>
+            <h2>Warning!</h2>
+            <p id="warningMessage">Tab switching detected! This activity has been logged.</p>
+            <div class="warning-violations">
+                Violations: <span id="violationCount">1</span> / 3
+            </div>
+            <button class="btn btn-danger btn-lg" onclick="dismissWarning()">
+                <i class="fas fa-check"></i> I Understand, Resume Exam
+            </button>
+        </div>
+    </div>
+
+    <!-- Fullscreen Prompt -->
+    <div id="fullscreenPrompt" class="fullscreen-prompt">
+        <div class="fullscreen-box">
+            <div class="fs-icon"><i class="fas fa-expand"></i></div>
+            <h2>Fullscreen Required</h2>
+            <p>This exam must be taken in fullscreen mode for security purposes.</p>
+            <button class="btn btn-primary btn-lg" onclick="enterFullscreen()">
+                <i class="fas fa-expand-arrows-alt"></i> Enter Fullscreen
+            </button>
+        </div>
+    </div>
+
+    <!-- Exam Header -->
+    <header class="exam-header">
+        <div class="exam-header-left">
+            <div class="exam-brand">
+                <i class="fas fa-graduation-cap"></i> ExamPro
+            </div>
+            <div class="exam-title-bar">
+                <h1>{{ exam.title }}</h1>
+            </div>
+        </div>
+        <div class="exam-header-right">
+            <div class="exam-progress-info">
+                <span id="answeredCount">0</span>/{{ questions|length }} Answered
+            </div>
+            <div class="timer-wrap" id="timerWrap">
+                <i class="fas fa-clock"></i>
+                <span id="timerDisplay">{{ exam.time_limit }}:00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Bar -->
+    <div class="exam-progress-bar">
+        <div id="examProgressFill" class="exam-progress-fill" style="width:0%"></div>
+    </div>
+
+    <!-- Exam Body -->
+    <div class="exam-layout">
+
+        <!-- Question Panel -->
+        <main class="exam-main">
+            <form method="POST" action="{{ url_for('submit_exam') }}" id="examForm">
+                <input type="hidden" name="malpractice_flag" id="malpracticeFlag" value="0">
+                <input type="hidden" name="violations" id="violationsInput" value="0">
+
+                {% for q in questions %}
+                <div class="question-card" id="qCard{{ loop.index }}"
+                     {% if not loop.first %}style="display:none"{% endif %}>
+                    <div class="question-header">
+                        <div class="question-number">Q{{ loop.index }}</div>
+                        <div class="question-marks">
+                            <i class="fas fa-star"></i> {{ q.marks }} Mark{{ 's' if q.marks > 1 else '' }}
+                        </div>
+                    </div>
+                    <div class="question-text">{{ q.question }}</div>
+                    <div class="options-grid">
+                        {% set options = [q.option1, q.option2, q.option3, q.option4] %}
+                        {% for opt in options %}
+                        <label class="option-label" for="q{{ q.id }}_{{ loop.index }}">
+                            <input type="radio" name="q_{{ q.id }}"
+                                   id="q{{ q.id }}_{{ loop.index }}"
+                                   value="{{ loop.index }}"
+                                   onchange="markAnswered({{ q.id }}, {{ loop.index0 }})">
+                            <span class="option-letter">{{ ['A','B','C','D'][loop.index0] }}</span>
+                            <span class="option-text">{{ opt }}</span>
+                            <span class="option-check"><i class="fas fa-check"></i></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="question-nav">
+                        {% if not loop.first %}
+                        <button type="button" class="btn btn-outline"
+                                onclick="goToQuestion({{ loop.index - 1 }})">
+                            <i class="fas fa-arrow-left"></i> Previous
+                        </button>
+                        {% else %}
+                        <span></span>
+                        {% endif %}
+                        {% if not loop.last %}
+                        <button type="button" class="btn btn-primary"
+                                onclick="goToQuestion({{ loop.index + 1 }})">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-success btn-lg"
+                                onclick="confirmSubmit()">
+                            <i class="fas fa-paper-plane"></i> Submit Exam
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </form>
+        </main>
+
+        <!-- Sidebar: Question Navigator -->
+        <aside class="question-nav-panel">
+            <div class="nav-panel-header">
+                <h3><i class="fas fa-th"></i> Questions</h3>
+                <div class="nav-legend">
+                    <span class="legend-item answered">✓ Answered</span>
+                    <span class="legend-item current">● Current</span>
+                    <span class="legend-item pending">○ Pending</span>
+                </div>
+            </div>
+            <div class="question-grid" id="questionGrid">
+                {% for q in questions %}
+                <button type="button"
+                        class="q-nav-btn {% if loop.first %}q-current{% endif %}"
+                        id="qBtn{{ loop.index }}"
+                        onclick="goToQuestion({{ loop.index }})">
+                    {{ loop.index }}
+                </button>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-success btn-full mt-2" onclick="confirmSubmit()">
+                <i class="fas fa-paper-plane"></i> Submit Exam
+            </button>
+        </aside>
+    </div>
+
+    <!-- Confirm Submit Modal -->
+    <div id="submitModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-icon"><i class="fas fa-paper-plane"></i></div>
+            <h2>Submit Exam?</h2>
+            <p>You have answered <strong id="modalAnswered">0</strong> out of <strong>{{ questions|length }}</strong> questions.</p>
+            <p class="modal-warning">Once submitted, you cannot go back.</p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-success" onclick="document.getElementById('examForm').submit()">
+                    <i class="fas fa-check"></i> Yes, Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Initialize exam with server values
+        const EXAM_TIME_MINUTES = {{ exam.time_limit }};
+        const TOTAL_QUESTIONS = {{ questions|length }};
+        initExam(EXAM_TIME_MINUTES, TOTAL_QUESTIONS);
+    </script>
+</body>
+</html>

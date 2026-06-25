@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - ExamPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <span>ExamPro</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('student_dashboard') }}" class="nav-item active">
+                <i class="fas fa-home"></i><span>Dashboard</span>
+            </a>
+            {% if exam and can_take_exam %}
+            <a href="{{ url_for('exam', exam_id=exam.id) }}" class="nav-item">
+                <i class="fas fa-pen-to-square"></i><span>Take Exam</span>
+            </a>
+            {% endif %}
+            <a href="#results-section" class="nav-item">
+                <i class="fas fa-chart-line"></i><span>My Results</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar">{{ user.name[0] | upper }}</div>
+                <div>
+                    <div class="sidebar-name">{{ user.name }}</div>
+                    <div class="sidebar-email">{{ user.email }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-title">
+                <h1>Student Dashboard</h1>
+                <span>Welcome back, {{ user.name }}!</span>
+            </div>
+            <div class="topbar-actions">
+                <div class="topbar-date">
+                    <i class="fas fa-calendar"></i>
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'danger' else 'info-circle' }}"></i>
+                        {{ message }}
+                        <button onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <!-- Attendance Card -->
+            <div class="stat-card {% if can_take_exam %}success{% else %}danger{% endif %}">
+                <div class="stat-card-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">{{ user.attendance }}%</div>
+                    <div class="stat-card-label">Attendance</div>
+                    <div class="stat-card-sub">
+                        {% if can_take_exam %}
+                            <i class="fas fa-check-circle"></i> Eligible for Exam
+                        {% else %}
+                            <i class="fas fa-times-circle"></i> Below 75% threshold
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-card-ring">
+                    <svg viewBox="0 0 36 36">
+                        <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="ring-fill {% if can_take_exam %}ring-green{% else %}ring-red{% endif %}"
+                              stroke-dasharray="{{ user.attendance }}, 100"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Total Exams Taken -->
+            <div class="stat-card blue">
+                <div class="stat-card-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">{{ results | length }}</div>
+                    <div class="stat-card-label">Exams Taken</div>
+                    <div class="stat-card-sub">
+                        <i class="fas fa-history"></i> All time attempts
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Score -->
+            <div class="stat-card purple">
+                <div class="stat-card-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">
+                        {% if results %}
+                            {{ results | map(attribute='percentage') | max | round(1) }}%
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </div>
+                    <div class="stat-card-label">Best Score</div>
+                    <div class="stat-card-sub">
+                        <i class="fas fa-star"></i> Personal record
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Grade -->
+            <div class="stat-card orange">
+                <div class="stat-card-icon">
+                    <i class="fas fa-medal"></i>
+                </div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">
+                        {% if results %}{{ results[0].grade }}{% else %}—{% endif %}
+                    </div>
+                    <div class="stat-card-label">Latest Grade</div>
+                    <div class="stat-card-sub">
+                        <i class="fas fa-clock"></i> Most recent attempt
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Exam Card -->
+        <section class="exam-banner-section">
+            {% if exam %}
+                <div class="exam-banner {% if not can_take_exam %}exam-banner-locked{% endif %}">
+                    <div class="exam-banner-info">
+                        <div class="exam-banner-icon">
+                            {% if can_take_exam %}
+                                <i class="fas fa-pen-to-square"></i>
+                            {% else %}
+                                <i class="fas fa-lock"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h2>{{ exam.title }}</h2>
+                            <p>{{ exam.description }}</p>
+                            <div class="exam-meta">
+                                <span><i class="fas fa-clock"></i> {{ exam.time_limit }} minutes</span>
+                                <span><i class="fas fa-star"></i> {{ exam.total_marks }} marks</span>
+                                <span>
+                                    <i class="fas fa-{{ 'check-circle' if can_take_exam else 'times-circle' }}"></i>
+                                    {% if can_take_exam %}Eligible{% else %}Not Eligible{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="exam-banner-action">
+                        {% if can_take_exam %}
+                            <a href="{{ url_for('exam', exam_id=exam.id) }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-play"></i> Start Exam
+                            </a>
+                        {% else %}
+                            <div class="locked-msg">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Attendance &lt; 75%<br>Cannot take exam</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="exam-banner exam-banner-empty">
+                    <i class="fas fa-inbox"></i>
+                    <p>No active exams available at this time.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- Results History -->
+        <section class="results-section" id="results-section">
+            <div class="section-title">
+                <h2><i class="fas fa-chart-line"></i> My Performance History</h2>
+            </div>
+
+            {% if results %}
+            <div class="results-table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Exam</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                            <th>Malpractice</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ r.exam_title }}</td>
+                            <td>{{ r.score }}/{{ r.total_marks }}</td>
+                            <td>
+                                <div class="mini-progress">
+                                    <div class="mini-bar" style="width: {{ r.percentage }}%"></div>
+                                    <span>{{ r.percentage }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="grade-badge grade-{{ r.grade | lower }}">{{ r.grade }}</span>
+                            </td>
+                            <td>
+                                {% if r.malpractice_flag %}
+                                    <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Flagged</span>
+                                {% else %}
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Clean</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.submitted_at[:16] if r.submitted_at else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>No results yet</h3>
+                <p>Take your first exam to see results here!</p>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Show current date
+        document.getElementById('currentDate').textContent =
+            new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    </script>
+</body>
+</html>

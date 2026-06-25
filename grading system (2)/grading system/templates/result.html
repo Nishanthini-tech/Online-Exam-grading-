@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result - ExamPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="result-body">
+
+    <div class="result-page">
+
+        <!-- Confetti for pass grades -->
+        {% if result.grade != 'Fail' %}
+        <div id="confetti-container"></div>
+        {% endif %}
+
+        <!-- Result Card -->
+        <div class="result-card">
+
+            <!-- Grade Badge -->
+            <div class="result-grade-wrap">
+                <div class="result-grade-circle grade-circle-{{ result.grade | lower }}">
+                    <span class="result-grade-letter">{{ result.grade }}</span>
+                </div>
+                <div class="result-grade-label">
+                    {% if result.grade == 'A' %}🏆 Outstanding Performance!
+                    {% elif result.grade == 'B' %}🎉 Great Job!
+                    {% elif result.grade == 'C' %}👍 Good Effort!
+                    {% else %}💪 Keep Practicing!
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Exam Info -->
+            <div class="result-exam-name">{{ exam.title }}</div>
+
+            <!-- Score Ring -->
+            <div class="result-score-ring">
+                <svg viewBox="0 0 120 120" width="180" height="180">
+                    <circle cx="60" cy="60" r="50"
+                            fill="none" stroke="#1e293b" stroke-width="10"/>
+                    <circle cx="60" cy="60" r="50"
+                            fill="none"
+                            stroke="{% if result.grade == 'A' %}#22c55e{% elif result.grade == 'B' %}#3b82f6{% elif result.grade == 'C' %}#f59e0b{% else %}#ef4444{% endif %}"
+                            stroke-width="10"
+                            stroke-linecap="round"
+                            stroke-dasharray="{{ (result.percentage / 100 * 314.16) | round(2) }} 314.16"
+                            transform="rotate(-90 60 60)"/>
+                    <text x="50%" y="45%" text-anchor="middle"
+                          font-size="20" font-weight="800"
+                          fill="white" dy=".3em">
+                        {{ result.percentage }}%
+                    </text>
+                    <text x="50%" y="62%" text-anchor="middle"
+                          font-size="10" fill="#94a3b8">Percentage</text>
+                </svg>
+            </div>
+
+            <!-- Score Details -->
+            <div class="result-stats-row">
+                <div class="result-stat">
+                    <div class="result-stat-num">{{ result.score }}</div>
+                    <div class="result-stat-label">Score Obtained</div>
+                </div>
+                <div class="result-stat-divider"></div>
+                <div class="result-stat">
+                    <div class="result-stat-num">{{ result.total_marks }}</div>
+                    <div class="result-stat-label">Total Marks</div>
+                </div>
+                <div class="result-stat-divider"></div>
+                <div class="result-stat">
+                    <div class="result-stat-num">{{ result.percentage }}%</div>
+                    <div class="result-stat-label">Percentage</div>
+                </div>
+            </div>
+
+            <!-- Grade Scale -->
+            <div class="grade-scale">
+                <div class="grade-scale-title">Grading Criteria</div>
+                <div class="grade-scale-items">
+                    <div class="grade-scale-item {% if result.grade == 'A' %}active{% endif %}">
+                        <span class="gs-grade grade-a">A</span>
+                        <span>90–100%</span>
+                    </div>
+                    <div class="grade-scale-item {% if result.grade == 'B' %}active{% endif %}">
+                        <span class="gs-grade grade-b">B</span>
+                        <span>75–89%</span>
+                    </div>
+                    <div class="grade-scale-item {% if result.grade == 'C' %}active{% endif %}">
+                        <span class="gs-grade grade-c">C</span>
+                        <span>50–74%</span>
+                    </div>
+                    <div class="grade-scale-item {% if result.grade == 'Fail' %}active{% endif %}">
+                        <span class="gs-grade grade-fail">F</span>
+                        <span>Below 50%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Malpractice Alert -->
+            {% if result.malpractice_flag %}
+            <div class="malpractice-alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    <strong>Malpractice Detected</strong>
+                    <p>{{ result.violations }} tab-switch violation(s) were recorded during this exam. This has been logged and reported to the admin.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="result-actions">
+                <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
+                {% if exam %}
+                <a href="{{ url_for('exam', exam_id=exam.id) }}"
+                   class="btn btn-outline btn-lg"
+                   onclick="return confirm('Are you sure you want to retake the exam?')">
+                    <i class="fas fa-redo"></i> Retake Exam
+                </a>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Launch confetti for passing grades
+        {% if result.grade != 'Fail' %}
+        launchConfetti();
+        {% endif %}
+    </script>
+</body>
+</html>

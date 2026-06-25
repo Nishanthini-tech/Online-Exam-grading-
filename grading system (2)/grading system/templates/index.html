@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExamPro - Online Exam Grading System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="landing-body">
+
+    <!-- Navbar -->
+    <nav class="landing-nav">
+        <div class="nav-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <span>ExamPro</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light">Login</a>
+            <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <i class="fas fa-star"></i> Trusted Online Exam Platform
+            </div>
+            <h1 class="hero-title">
+                Smart Exam System<br>
+                <span class="gradient-text">Built for the Future</span>
+            </h1>
+            <p class="hero-subtitle">
+                Conduct secure, fair, and intelligent online examinations with real-time grading, malpractice detection, and detailed analytics.
+            </p>
+            <div class="hero-actions">
+                <a href="{{ url_for('register') }}" class="btn btn-hero-primary">
+                    <i class="fas fa-rocket"></i> Start for Free
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-hero-outline">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-num">500+</span>
+                    <span class="stat-label">Students</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-num">100%</span>
+                    <span class="stat-label">Secure</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <span class="stat-num">24/7</span>
+                    <span class="stat-label">Available</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="dashboard-mockup">
+                <div class="mockup-header">
+                    <div class="mockup-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span>ExamPro Dashboard</span>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-card blue">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="mockup-num">92%</div>
+                            <div class="mockup-label">Score</div>
+                        </div>
+                    </div>
+                    <div class="mockup-card green">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <div class="mockup-num">28:45</div>
+                            <div class="mockup-label">Time Left</div>
+                        </div>
+                    </div>
+                    <div class="mockup-progress">
+                        <div class="progress-label">
+                            <span>Progress</span><span>7/10 Questions</span>
+                        </div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-fill" style="width:70%"></div>
+                        </div>
+                    </div>
+                    <div class="mockup-grade">
+                        Grade: <span class="grade-a">A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Everything You Need</h2>
+                <p>A complete exam management solution for students and educators</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon purple">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Malpractice Detection</h3>
+                    <p>AI-powered tab monitoring, fullscreen enforcement, and copy-paste prevention keep exams fair.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon blue">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+                    <h3>Auto-Timed Exams</h3>
+                    <p>Built-in countdown timer auto-submits the exam when time expires, ensuring fairness.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon green">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Instant Analytics</h3>
+                    <p>Admin gets real-time grade distributions, performance reports, and malpractice logs.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon orange">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                    <h3>Smart Grading</h3>
+                    <p>Automatic A/B/C/Fail grading with instant result display right after submission.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon pink">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <h3>Attendance Gate</h3>
+                    <p>Only students with ≥75% attendance can access exams, maintaining academic standards.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon teal">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Mobile Friendly</h3>
+                    <p>Fully responsive design works seamlessly across desktops, tablets, and smartphones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-card">
+                <h2>Ready to get started?</h2>
+                <p>Join hundreds of students and educators using ExamPro today.</p>
+                <div class="cta-actions">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus"></i> Register as Student
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg">
+                        <i class="fas fa-user-shield"></i> Admin Login
+                    </a>
+                </div>
+                <div class="admin-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Admin: <strong>admin@exam.com</strong> / <strong>admin123</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>&copy; 2024 ExamPro. Built with Flask &amp; SQLite.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

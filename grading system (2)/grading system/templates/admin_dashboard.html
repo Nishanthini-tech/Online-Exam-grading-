@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ExamPro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="app-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar sidebar-admin" id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <span>ExamPro Admin</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-item active">
+                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('manage_questions') }}" class="nav-item">
+                <i class="fas fa-question-circle"></i><span>Questions</span>
+            </a>
+            <a href="#students-section" class="nav-item">
+                <i class="fas fa-users"></i><span>Students</span>
+            </a>
+            <a href="#results-section" class="nav-item">
+                <i class="fas fa-chart-bar"></i><span>Results</span>
+            </a>
+            <a href="#malp-section" class="nav-item">
+                <i class="fas fa-exclamation-triangle"></i><span>Malpractice</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar admin-av">A</div>
+                <div>
+                    <div class="sidebar-name">Administrator</div>
+                    <div class="sidebar-email">admin@exam.com</div>
+                </div>
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-title">
+                <h1>Admin Dashboard</h1>
+                <span>Manage your exam system</span>
+            </div>
+            <div class="topbar-actions">
+                <a href="{{ url_for('manage_questions') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Manage Questions
+                </a>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'danger' else 'info-circle' }}"></i>
+                        {{ message }}
+                        <button onclick="this.parentElement.remove()">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-card-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">{{ total_students }}</div>
+                    <div class="stat-card-label">Total Students</div>
+                    <div class="stat-card-sub"><i class="fas fa-user-graduate"></i> Registered</div>
+                </div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-card-icon"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">{{ total_exams }}</div>
+                    <div class="stat-card-label">Total Exams</div>
+                    <div class="stat-card-sub"><i class="fas fa-pen"></i> Created</div>
+                </div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-card-icon"><i class="fas fa-clipboard-check"></i></div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">{{ total_results }}</div>
+                    <div class="stat-card-label">Submissions</div>
+                    <div class="stat-card-sub"><i class="fas fa-chart-line"></i> Avg: {{ avg_score }}%</div>
+                </div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-card-info">
+                    <div class="stat-card-num">{{ malpractice_count }}</div>
+                    <div class="stat-card-label">Malpractice Flags</div>
+                    <div class="stat-card-sub"><i class="fas fa-shield-alt"></i> Detected</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Grade Distribution + Exam Creation -->
+        <section class="admin-two-col">
+            <!-- Grade Distribution -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2><i class="fas fa-chart-pie"></i> Grade Distribution</h2>
+                </div>
+                <div class="grade-dist">
+                    {% set grade_map = {'A': 0, 'B': 0, 'C': 0, 'Fail': 0} %}
+                    {% for gd in grade_dist %}
+                        {% if gd.grade in grade_map %}
+                            {% set _ = grade_map.update({gd.grade: gd.count}) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set total_g = (grade_map['A'] + grade_map['B'] + grade_map['C'] + grade_map['Fail']) or 1 %}
+                    {% for grade_name, grade_color in [('A','green'),('B','blue'),('C','orange'),('Fail','red')] %}
+                    <div class="grade-dist-row">
+                        <span class="gd-label grade-badge grade-{{ grade_name | lower }}">{{ grade_name }}</span>
+                        <div class="gd-bar-wrap">
+                            <div class="gd-bar gd-bar-{{ grade_color }}"
+                                 style="width: {{ ((grade_map[grade_name] / total_g) * 100) | round(1) }}%"></div>
+                        </div>
+                        <span class="gd-count">{{ grade_map[grade_name] }}</span>
+                    </div>
+                    {% endfor %}
+                    {% if total_results == 0 %}
+                    <p class="empty-note">No exam submissions yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Create New Exam -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2><i class="fas fa-plus-circle"></i> Create New Exam</h2>
+                </div>
+                <form method="POST" action="{{ url_for('add_exam') }}" class="admin-form">
+                    <div class="form-group">
+                        <label>Exam Title</label>
+                        <input type="text" name="title" placeholder="e.g. Python Basics Test" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" placeholder="Brief exam description..." rows="2"></textarea>
+                    </div>
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label>Time Limit (min)</label>
+                            <input type="number" name="time_limit" value="30" min="5" max="180">
+                        </div>
+                        <div class="form-group">
+                            <label>Total Marks</label>
+                            <input type="number" name="total_marks" value="100" min="10" max="500">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-plus"></i> Create Exam
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Active Exams -->
+        <section class="admin-card">
+            <div class="admin-card-header">
+                <h2><i class="fas fa-list"></i> All Exams</h2>
+            </div>
+            <div class="results-table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Time (min)</th>
+                            <th>Total Marks</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in exams %}
+                        <tr>
+                            <td>{{ exam.id }}</td>
+                            <td>{{ exam.title }}</td>
+                            <td>{{ exam.time_limit }}</td>
+                            <td>{{ exam.total_marks }}</td>
+                            <td>
+                                <span class="badge {% if exam.is_active %}badge-success{% else %}badge-secondary{% endif %}">
+                                    {{ 'Active' if exam.is_active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('manage_questions', exam_id=exam.id) }}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-question-circle"></i> Questions
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Students Section -->
+        <section class="admin-card" id="students-section">
+            <div class="admin-card-header">
+                <h2><i class="fas fa-users"></i> Student Management</h2>
+            </div>
+            <div class="results-table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Attendance %</th>
+                            <th>Eligible</th>
+                            <th>Update Attendance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <div class="student-name-wrap">
+                                    <div class="mini-avatar">{{ s.name[0] | upper }}</div>
+                                    {{ s.name }}
+                                </div>
+                            </td>
+                            <td>{{ s.email }}</td>
+                            <td>
+                                <div class="mini-progress">
+                                    <div class="mini-bar {% if s.attendance >= 75 %}bar-green{% else %}bar-red{% endif %}"
+                                         style="width:{{ s.attendance }}%"></div>
+                                    <span>{{ s.attendance }}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if s.attendance >= 75 %}
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>
+                                {% else %}
+                                    <span class="badge badge-danger"><i class="fas fa-times"></i> No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('update_attendance', uid=s.id) }}"
+                                      class="inline-form">
+                                    <input type="number" name="attendance" value="{{ s.attendance }}"
+                                           min="0" max="100" class="small-input">
+                                    <button type="submit" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not students %}
+                        <tr><td colspan="6" class="empty-note">No students registered yet.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="admin-card" id="results-section">
+            <div class="admin-card-header">
+                <h2><i class="fas fa-chart-bar"></i> Recent Exam Results</h2>
+            </div>
+            <div class="results-table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Exam</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Grade</th>
+                            <th>Malpractice</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent_results %}
+                        <tr {% if r.malpractice_flag %}class="row-flagged"{% endif %}>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <div class="student-name-wrap">
+                                    <div class="mini-avatar">{{ r.student_name[0] | upper }}</div>
+                                    <div>
+                                        <div>{{ r.student_name }}</div>
+                                        <div class="text-muted text-sm">{{ r.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ r.exam_title }}</td>
+                            <td>{{ r.score }}/{{ r.total_marks }}</td>
+                            <td>
+                                <div class="mini-progress">
+                                    <div class="mini-bar" style="width:{{ r.percentage }}%"></div>
+                                    <span>{{ r.percentage }}%</span>
+                                </div>
+                            </td>
+                            <td><span class="grade-badge grade-{{ r.grade | lower }}">{{ r.grade }}</span></td>
+                            <td>
+                                {% if r.malpractice_flag %}
+                                    <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Flagged</span>
+                                {% else %}
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Clean</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-sm">{{ r.submitted_at[:16] if r.submitted_at else '—' }}</td>
+                            <td>
+                                <form method="POST"
+                                      action="{{ url_for('delete_result', rid=r.id) }}"
+                                      onsubmit="return confirm('Delete this result?')">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not recent_results %}
+                        <tr><td colspan="9" class="empty-note">No results yet.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Malpractice Logs -->
+        <section class="admin-card" id="malp-section">
+            <div class="admin-card-header">
+                <h2><i class="fas fa-shield-alt"></i> Malpractice Logs</h2>
+            </div>
+            <div class="results-table-wrap">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Activity</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in mal_logs %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ log.student_name }}</td>
+                            <td>
+                                <span class="malp-activity">
+                                    <i class="fas fa-exclamation-circle"></i> {{ log.activity }}
+                                </span>
+                            </td>
+                            <td>{{ log.timestamp[:16] if log.timestamp else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not mal_logs %}
+                        <tr><td colspan="4" class="empty-note">No malpractice activity recorded.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
